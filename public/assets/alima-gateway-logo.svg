@@ -1,0 +1,29 @@
+<svg width="512" height="512" viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bg" x1="64" y1="56" x2="448" y2="456" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#2B73E8"/>
+      <stop offset="1" stop-color="#1349A8"/>
+    </linearGradient>
+    <linearGradient id="door" x1="256" y1="140" x2="256" y2="430" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#F8FCFF"/>
+      <stop offset="1" stop-color="#DCEBFF"/>
+    </linearGradient>
+  </defs>
+
+  <rect x="40" y="40" width="432" height="432" rx="84" fill="url(#bg)"/>
+
+  <path d="M256 112C176 112 112 176 112 256V392C112 407.464 124.536 420 140 420H372C387.464 420 400 407.464 400 392V256C400 176 336 112 256 112Z" fill="#0E2F6B"/>
+
+  <path d="M256 144C193 144 144 193 144 256V384H368V256C368 193 319 144 256 144Z" fill="url(#door)"/>
+
+  <path d="M256 172C215 172 182 205 182 246V384H330V246C330 205 297 172 256 172Z" fill="#2A66CE"/>
+
+  <path d="M256 196C229 196 208 217 208 244V384H304V244C304 217 283 196 256 196Z" fill="#F4F9FF"/>
+
+  <rect x="248" y="282" width="16" height="102" rx="8" fill="#2A66CE"/>
+  <circle cx="278" cy="300" r="8" fill="#2A66CE"/>
+
+  <path d="M192 236H320" stroke="#9FC2FF" stroke-width="10" stroke-linecap="round"/>
+  <path d="M176 270H336" stroke="#9FC2FF" stroke-width="8" stroke-linecap="round" stroke-dasharray="4 12"/>
+</svg>
+
