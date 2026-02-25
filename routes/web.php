@@ -19,6 +19,7 @@ Route::middleware('panel.auth')->group(function (): void {
     Route::prefix('/panel/api')->group(function (): void {
         Route::get('/apps', [PanelApiController::class, 'apps']);
         Route::post('/apps', [PanelApiController::class, 'storeApp']);
+        Route::delete('/apps/{appId}', [PanelApiController::class, 'deleteApp']);
         Route::put('/apps/{appId}/blast-settings', [PanelApiController::class, 'updateBlastSetting']);
         Route::put('/apps/{appId}/webhook-settings', [PanelApiController::class, 'updateWebhookSetting']);
         Route::put('/apps/{appId}/api-key', [PanelApiController::class, 'regenerateApiKey']);

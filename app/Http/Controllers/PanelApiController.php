@@ -29,6 +29,11 @@ class PanelApiController extends Controller
         return $this->jsonFromResponse($this->api->adminRequest('POST', '/admin/apps', $payload));
     }
 
+    public function deleteApp(string $appId): JsonResponse
+    {
+        return $this->jsonFromResponse($this->api->adminRequest('DELETE', "/admin/apps/{$appId}"));
+    }
+
     public function updateBlastSetting(Request $request, string $appId): JsonResponse
     {
         $payload = $request->validate([
