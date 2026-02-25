@@ -11,6 +11,7 @@ Panel admin Laravel untuk mengelola engine WhatsApp Node (`wa-gateway-hub`), sia
 
 - Login panel
 - Dashboard app + setting blast
+- Dashboard app + setting webhook inbound (url + secret)
 - Device management (create/start/reconnect/disconnect/edit/delete/token)
 - Phonebook contact + pilih kontak ke menu send
 - WA Group list (pilih device -> update list group)

@@ -39,6 +39,17 @@ class PanelApiController extends Controller
         return $this->jsonFromResponse($this->api->adminRequest('PUT', "/admin/apps/{$appId}/blast-settings", $payload));
     }
 
+    public function updateWebhookSetting(Request $request, string $appId): JsonResponse
+    {
+        $payload = $request->validate([
+            'enabled' => ['nullable', 'boolean'],
+            'url' => ['nullable', 'url'],
+            'secret' => ['nullable', 'string', 'max:255'],
+        ]);
+
+        return $this->jsonFromResponse($this->api->adminRequest('PUT', "/admin/apps/{$appId}/webhook-settings", $payload));
+    }
+
     public function sessions(): JsonResponse
     {
         return $this->jsonFromResponse($this->api->adminRequest('GET', '/admin/sessions'));

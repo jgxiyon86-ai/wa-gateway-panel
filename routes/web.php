@@ -9,7 +9,7 @@ Route::redirect('/', '/panel');
 
 Route::middleware('guest')->group(function (): void {
     Route::get('/login', [AuthController::class, 'showLogin'])->name('login');
-    Route::post('/login', [AuthController::class, 'login'])->name('login.post');
+    Route::post('/login', [AuthController::class, 'login'])->middleware('throttle:panel-login')->name('login.post');
 });
 
 Route::middleware('panel.auth')->group(function (): void {
@@ -20,6 +20,7 @@ Route::middleware('panel.auth')->group(function (): void {
         Route::get('/apps', [PanelApiController::class, 'apps']);
         Route::post('/apps', [PanelApiController::class, 'storeApp']);
         Route::put('/apps/{appId}/blast-settings', [PanelApiController::class, 'updateBlastSetting']);
+        Route::put('/apps/{appId}/webhook-settings', [PanelApiController::class, 'updateWebhookSetting']);
 
         Route::get('/sessions', [PanelApiController::class, 'sessions']);
         Route::post('/sessions', [PanelApiController::class, 'createSession']);
