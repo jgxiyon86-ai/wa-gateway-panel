@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="csrf-token" content="{{ csrf_token() }}">
-    <title>ALIMA GATEWAY</title>
+    <title>ALIMA Gateway Control Center</title>
     <style>
         :root{--side:#1f62d8;--sideText:#e4efff;--sideActive:#1b4faf;--bg:#dff0ff;--card:#f9fcff;--line:#bfdcff;--text:#10243e;--muted:#4f6f9e;--blue:#1d6ff2;--gray:#5f789c;--danger:#e64545;--ok:#16a34a}
         *{box-sizing:border-box}body{margin:0;font-family:Segoe UI,Tahoma,sans-serif;background:var(--bg);color:var(--text)}
@@ -54,8 +54,8 @@
     </aside>
     <main class="main">
         <div class="hero">
-            <h1>ALIMA GATEWAY</h1>
-            <p>Panel manajemen device, phonebook, grup, broadcast, dan histori pesan.</p>
+            <h1>ALIMA Gateway Control Center</h1>
+            <p>Satu pintu operasional gateway: manajemen app, device, webhook, blast, dan histori pesan.</p>
         </div>
         <div class="topbar">
             <div class="topbar-left">
@@ -95,6 +95,9 @@
                     <div><label>Webhook Secret</label><input id="webhookSecret" placeholder="token rahasia"></div>
                     <div><label>Aktifkan Webhook</label><select id="webhookEnabled"><option value="0">Nonaktif</option><option value="1">Aktif</option></select></div>
                     <div style="align-self:end"><button id="saveWebhookSettingBtn" class="btn ok">Simpan Webhook</button></div>
+                </div>
+                <div class="status" style="margin-top:8px">
+                    Security note: simpan <strong>Webhook Secret</strong> sama persis di AMAL (BM Gateway/Webhook) untuk verifikasi signature inbound.
                 </div>
                 <div id="apiKeyBox" class="mono" style="margin-top:8px">API key: -</div>
                 <div id="appStatus" class="status" style="margin-top:8px">Belum ada app.</div>
@@ -168,8 +171,8 @@
         </section>
         </div>
         <footer class="app-footer">
-            <span>Copyright © {{ date('Y') }} Alima Creation</span>
-            <span>ALIMA GATEWAY - Laravel Edition</span>
+            <span>Copyright (c) {{ date('Y') }} Alima Creation</span>
+            <span>ALIMA Gateway Panel</span>
         </footer>
     </main>
 </section>
