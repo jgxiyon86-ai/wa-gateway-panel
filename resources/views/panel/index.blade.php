@@ -115,6 +115,20 @@
                     <button id="saveAppSetupBtn" class="btn ok" type="button">Simpan App Setup</button>
                     <button id="deleteActiveAppBtn" class="btn danger" type="button">Hapus App Aktif</button>
                 </div>
+                <h4 style="margin:14px 0 8px">Daftar Aplikasi</h4>
+                <div class="scroll">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>App ID</th>
+                                <th>Nama</th>
+                                <th>Webhook</th>
+                                <th>Aksi</th>
+                            </tr>
+                        </thead>
+                        <tbody id="appListTable"></tbody>
+                    </table>
+                </div>
             </div>
         </section>
 
@@ -202,7 +216,8 @@ async function copyText(value){if(!value)return;try{if(navigator.clipboard&&wind
 function bindMenu(){document.querySelectorAll('.menu button[data-view]').forEach(btn=>btn.addEventListener('click',()=>{document.querySelectorAll('.menu > button[data-view]').forEach(x=>x.classList.remove('active'));const targetView=btn.dataset.view;const topMenu=document.querySelector(`.menu > button[data-view="${targetView}"]`);if(topMenu)topMenu.classList.add('active');document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));$(targetView).classList.add('active');}));}
 function updateAppLockUi(){const sel=$('appSelectTop');const btn=$('lockAppBtn');if(state.appLocked){sel.disabled=true;btn.textContent='Buka Kunci';setStatus('appLockStatus',`Terkunci ke app: ${state.selectedApp?.appId||'-'} (hanya browser ini)`,'ok');}else{sel.disabled=false;btn.textContent='Kunci App';setStatus('appLockStatus','Mode app belum dikunci. Anda bisa pilih app lain kapan saja.','');}}
 function updateAppPanel(app){state.selectedApp=app;$('newAppId').value=String(app.appId||'');$('newAppName').value=String(app.name||app.appId||'');$('apiKeyInput').value=String(app.apiKey||'');$('apiKeyBox').textContent=`API key: ${app.apiKey||'-'}`;const delaySec=Number(app.blastSettings?.delaySeconds??20);$('delayMinutes').value=(delaySec/60).toFixed(2);$('maxPerBatch').value=String(app.blastSettings?.maxPerBatch??50);$('webhookUrl').value=String(app.webhookSettings?.url||'');$('webhookSecret').value=String(app.webhookSettings?.secret||'');$('webhookEnabled').value=(app.webhookSettings?.enabled===true)?'1':'0';setStatus('webhookTargetInfo',`Webhook tersimpan ke app aktif: ${app.appId}`,'ok');setStatus('appStatus',`App aktif ${app.appId}. delay=${delaySec}s max=${app.blastSettings?.maxPerBatch??50}`,'ok');}
-function renderAppsTop(){const sel=$('appSelectTop');sel.innerHTML='';state.apps.forEach(app=>{const op=document.createElement('option');op.value=app.appId;op.textContent=`${app.appId} - ${app.name||app.appId}`;sel.appendChild(op);});const lockedId=localStorage.getItem('wa_locked_app_id')||'';state.appLocked=Boolean(lockedId);const selected=(state.appLocked?state.apps.find(x=>x.appId===lockedId):null)||state.apps.find(x=>x.appId===state.selectedApp?.appId)||state.apps[0]||null;if(selected){sel.value=selected.appId;updateAppPanel(selected);}else{$('newAppId').value='';$('newAppName').value='';$('apiKeyInput').value='';$('webhookUrl').value='';$('webhookSecret').value='';$('apiKeyBox').textContent='API key: -';setStatus('webhookTargetInfo','Webhook akan tersimpan ke app aktif.','');}updateAppLockUi();}
+function renderAppList(){const tbody=$('appListTable');if(!tbody)return;tbody.innerHTML='';state.apps.forEach(app=>{const isActive=state.selectedApp?.appId===app.appId;const wh=app.webhookSettings?.enabled?`Aktif - ${app.webhookSettings?.url||'-'}`:'Nonaktif';const tr=document.createElement('tr');tr.innerHTML=`<td><strong>${app.appId}</strong>${isActive?'<br><span class="badge">Aktif</span>':''}</td><td>${app.name||'-'}</td><td>${wh}</td><td><button class="btn gray" data-app-act="select" data-app-id="${app.appId}">Pilih/Edit</button> <button class="btn gray" data-app-act="lock" data-app-id="${app.appId}">Kunci di Sini</button> <button class="btn danger" data-app-act="delete" data-app-id="${app.appId}">Hapus</button></td>`;tbody.appendChild(tr);});}
+function renderAppsTop(){const sel=$('appSelectTop');sel.innerHTML='';state.apps.forEach(app=>{const op=document.createElement('option');op.value=app.appId;op.textContent=`${app.appId} - ${app.name||app.appId}`;sel.appendChild(op);});const lockedId=localStorage.getItem('wa_locked_app_id')||'';state.appLocked=Boolean(lockedId);const selected=(state.appLocked?state.apps.find(x=>x.appId===lockedId):null)||state.apps.find(x=>x.appId===state.selectedApp?.appId)||state.apps[0]||null;if(selected){sel.value=selected.appId;updateAppPanel(selected);}else{$('newAppId').value='';$('newAppName').value='';$('apiKeyInput').value='';$('webhookUrl').value='';$('webhookSecret').value='';$('apiKeyBox').textContent='API key: -';setStatus('webhookTargetInfo','Webhook akan tersimpan ke app aktif.','');}updateAppLockUi();renderAppList();}
 function renderSessions(){const tbody=$('devicesTable');tbody.innerHTML='';const activeAppId=state.selectedApp?.appId||'';const sessions=(state.sessions||[]).filter(s=>!activeAppId||s.appId===activeAppId);sessions.forEach(s=>{const tr=document.createElement('tr');tr.innerHTML=`<td><strong>${s.sessionId}</strong><br>${s.label||'-'}<br><small>${s.appId}</small></td><td><span class="badge">${s.status||'-'}</span><br><small style="color:#a33">${s.lastError||''}</small></td><td><button class="btn gray" data-act="reconnect" data-id="${s.sessionId}">Reconnect</button> <button class="btn danger" data-act="disconnect" data-id="${s.sessionId}">Disconnect</button> <button class="btn gray" data-act="token" data-id="${s.sessionId}">Token</button> <button class="btn" data-act="edit" data-id="${s.sessionId}">Edit</button> <button class="btn danger" data-act="delete" data-id="${s.sessionId}">Delete</button></td>`;tbody.appendChild(tr);});$('statDevices').textContent=String(sessions.length);$('statConnected').textContent=String(sessions.filter(x=>x.status==='connected').length);const groupSel=$('groupSessionSelect');groupSel.innerHTML='';sessions.forEach(s=>{const op=document.createElement('option');op.value=s.sessionId;op.textContent=`${s.sessionId} (${s.status})`;groupSel.appendChild(op);});if(!sessions.length){setStatus('groupStatus','Belum ada device untuk app aktif ini.','warn');state.groups=[];renderGroups();}}
 function renderPhonebook(){const q=($('pbSearch').value||'').toLowerCase().trim();const tbody=$('phonebookTable');tbody.innerHTML='';const filtered=state.contacts.filter(c=>!q||`${c.name||''} ${c.phone||''} ${c.note||''}`.toLowerCase().includes(q));filtered.forEach(c=>{const checked=state.selectedContactIds.has(String(c.id))?'checked':'';const tr=document.createElement('tr');tr.innerHTML=`<td><input type="checkbox" data-pb-check="1" data-id="${c.id}" ${checked}></td><td>${c.name||'-'}</td><td>${c.phone||'-'}</td><td>${c.note||'-'}</td><td><button class="btn danger" data-id="${c.id}" data-phonebook-del="1">Delete</button></td>`;tbody.appendChild(tr);});const sendSel=$('sendContactSelect');sendSel.innerHTML='<option value="">-- pilih kontak --</option>';state.contacts.forEach(c=>{const op=document.createElement('option');op.value=c.phone||'';op.textContent=`${c.name||c.phone} - ${c.phone||'-'}`;sendSel.appendChild(op);});}
 function renderGroups(){const tbody=$('groupTable');tbody.innerHTML='';state.groups.forEach(g=>{const m=Array.isArray(g.participants)?g.participants.length:Number(g.size||0);const groupName=g.subject||g.name||'-';const tr=document.createElement('tr');tr.innerHTML=`<td>${g.id||'-'}</td><td>${groupName}</td><td>${m||0}</td>`;tbody.appendChild(tr);});}
@@ -256,6 +271,49 @@ function bind(){
   });
   $('copyApiKeyBtn').addEventListener('click', () => copyText($('apiKeyInput').value.trim()));
   $('deleteActiveAppBtn').addEventListener('click', deleteActiveApp);
+  $('appListTable').addEventListener('click', async e => {
+    const btn = e.target.closest('button[data-app-act]');
+    if (!btn) return;
+    const act = btn.dataset.appAct;
+    const appId = String(btn.dataset.appId || '').trim();
+    const app = state.apps.find(x => x.appId === appId);
+    if (!app) return;
+
+    if (act === 'select') {
+      if (state.appLocked && localStorage.getItem('wa_locked_app_id') !== appId) {
+        return setStatus('appLockStatus', `App terkunci: ${localStorage.getItem('wa_locked_app_id')}`, 'warn');
+      }
+      $('appSelectTop').value = appId;
+      updateAppPanel(app);
+      await loadSessions();
+      await loadPhonebook();
+      await loadHistory();
+      return;
+    }
+
+    if (act === 'lock') {
+      $('appSelectTop').value = appId;
+      updateAppPanel(app);
+      localStorage.setItem('wa_locked_app_id', appId);
+      state.appLocked = true;
+      updateAppLockUi();
+      return;
+    }
+
+    if (act === 'delete') {
+      if (!confirm(`Hapus app ${appId}? Semua session, history, dan phonebook app ini ikut terhapus.`)) return;
+      await api(`/apps/${encodeURIComponent(appId)}`, { method: 'DELETE' });
+      if (localStorage.getItem('wa_locked_app_id') === appId) {
+        localStorage.removeItem('wa_locked_app_id');
+        state.appLocked = false;
+      }
+      if (state.selectedApp?.appId === appId) {
+        state.selectedApp = null;
+      }
+      await refreshAll();
+      setStatus('appStatus', `App ${appId} berhasil dihapus.`, 'ok');
+    }
+  });
 
   $('createSessionBtn').addEventListener('click', addDevice);
   $('devicesTable').addEventListener('click', onDeviceAction);
