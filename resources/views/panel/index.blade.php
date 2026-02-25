@@ -45,6 +45,7 @@
         </div>
         <nav class="menu">
             <button class="active" data-view="dashboardView">Dashboard</button>
+            <button data-view="appSetupView">App Setup</button>
             <button data-view="deviceView">Device</button>
             <button data-view="phonebookView">Contact</button>
             <button data-view="groupView">WA Group</button>
@@ -79,35 +80,41 @@
                 <div class="card"><h3>Messages</h3><div id="statMessages" class="value">0</div></div>
             </div>
             <div class="card" style="margin-top:12px">
-                <h3 style="margin-top:0">Aplikasi & Setting Blast</h3>
+                <h3 style="margin-top:0">Ringkasan App Aktif</h3>
+                <div class="status">Setup aplikasi dipindah ke menu <strong>App Setup</strong> agar tidak tercampur saat multi aplikasi.</div>
+                <div id="apiKeyBox" class="mono" style="margin-top:8px">API key: -</div>
+                <div id="webhookTargetInfo" class="status" style="margin-top:8px">Webhook akan tersimpan ke app aktif.</div>
+                <div id="appStatus" class="status" style="margin-top:8px">Belum ada app.</div>
+            </div>
+        </section>
+
+        <section id="appSetupView" class="view">
+            <div class="card">
+                <h3 style="margin-top:0">App Setup</h3>
                 <div class="row">
                     <div><label>App ID</label><input id="newAppId" placeholder="sinyal-saham-indo"></div>
                     <div><label>Nama App</label><input id="newAppName" placeholder="Sinyal Saham Indo"></div>
-                    <div style="align-self:end"><button id="createAppBtn" class="btn">Buat / Update App</button></div>
                 </div>
                 <div class="row" style="margin-top:8px">
                     <div><label>Jeda Antar Pesan (menit)</label><input id="delayMinutes" type="number" min="0" step="0.1" value="0.3"></div>
                     <div><label>Max Kirim per Blast</label><input id="maxPerBatch" type="number" min="1" step="1" value="50"></div>
-                    <div style="align-self:end"><button id="saveBlastSettingBtn" class="btn ok">Simpan Setting</button></div>
+                    <div><label>API Key</label><input id="apiKeyInput" placeholder="ak_xxx atau klik generate"></div>
                 </div>
                 <div class="row" style="margin-top:8px">
                     <div><label>Webhook URL</label><input id="webhookUrl" placeholder="https://app-kamu.com/webhook/wa/inbound"></div>
                     <div><label>Webhook Secret</label><input id="webhookSecret" placeholder="token rahasia"></div>
                     <div><label>Aktifkan Webhook</label><select id="webhookEnabled"><option value="0">Nonaktif</option><option value="1">Aktif</option></select></div>
-                    <div style="align-self:end"><button id="saveWebhookSettingBtn" class="btn ok">Simpan Webhook</button></div>
                 </div>
-                <div id="webhookTargetInfo" class="status" style="margin-top:8px">Webhook akan tersimpan ke app aktif.</div>
                 <div class="status" style="margin-top:8px">
                     Security note: simpan <strong>Webhook Secret</strong> sama persis di AMAL (BM Gateway/Webhook) untuk verifikasi signature inbound.
                 </div>
-                <div id="apiKeyBox" class="mono" style="margin-top:8px">API key: -</div>
                 <div class="row actions" style="margin-top:8px">
                     <button id="genWebhookSecretBtn" class="btn gray" type="button">Generate Webhook Secret</button>
+                    <button id="genApiKeyBtn" class="btn gray" type="button">Generate API Key</button>
                     <button id="copyApiKeyBtn" class="btn gray" type="button">Copy API Key</button>
-                    <button id="regenApiKeyBtn" class="btn danger" type="button">Regenerate API Key</button>
+                    <button id="saveAppSetupBtn" class="btn ok" type="button">Simpan App Setup</button>
                     <button id="deleteActiveAppBtn" class="btn danger" type="button">Hapus App Aktif</button>
                 </div>
-                <div id="appStatus" class="status" style="margin-top:8px">Belum ada app.</div>
             </div>
         </section>
 
@@ -193,9 +200,9 @@ const setStatus=(id,msg,kind='')=>{const el=$(id);el.className='status'+(kind?` 
 function randomToken(prefix='sec'){const bytes=new Uint8Array(24);if(window.crypto&&window.crypto.getRandomValues){window.crypto.getRandomValues(bytes);}else{for(let i=0;i<bytes.length;i++)bytes[i]=Math.floor(Math.random()*256);}const hex=Array.from(bytes,b=>b.toString(16).padStart(2,'0')).join('');return `${prefix}_${hex}`;}
 async function copyText(value){if(!value)return;try{if(navigator.clipboard&&window.isSecureContext){await navigator.clipboard.writeText(value);}else{const el=document.createElement('textarea');el.value=value;document.body.appendChild(el);el.select();document.execCommand('copy');document.body.removeChild(el);}setStatus('appStatus','API key berhasil dicopy.','ok');}catch(_e){setStatus('appStatus','Gagal copy otomatis. Silakan copy manual.','warn');}}
 function bindMenu(){document.querySelectorAll('.menu button[data-view]').forEach(btn=>btn.addEventListener('click',()=>{document.querySelectorAll('.menu > button[data-view]').forEach(x=>x.classList.remove('active'));const targetView=btn.dataset.view;const topMenu=document.querySelector(`.menu > button[data-view="${targetView}"]`);if(topMenu)topMenu.classList.add('active');document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));$(targetView).classList.add('active');}));}
-function updateAppLockUi(){const sel=$('appSelectTop');const btn=$('lockAppBtn');if(state.appLocked){sel.disabled=true;btn.textContent='Buka Kunci';setStatus('appLockStatus',`Terkunci ke app: ${state.selectedApp?.appId||'-'}`,'ok');}else{sel.disabled=false;btn.textContent='Kunci App';setStatus('appLockStatus','Mode app belum dikunci.','');}}
-function updateAppPanel(app){state.selectedApp=app;$('newAppId').value=String(app.appId||'');$('newAppName').value=String(app.name||app.appId||'');$('apiKeyBox').textContent=`API key: ${app.apiKey||'-'}`;const delaySec=Number(app.blastSettings?.delaySeconds??20);$('delayMinutes').value=(delaySec/60).toFixed(2);$('maxPerBatch').value=String(app.blastSettings?.maxPerBatch??50);$('webhookUrl').value=String(app.webhookSettings?.url||'');$('webhookSecret').value=String(app.webhookSettings?.secret||'');$('webhookEnabled').value=(app.webhookSettings?.enabled===true)?'1':'0';setStatus('webhookTargetInfo',`Webhook tersimpan ke app aktif: ${app.appId}`,'ok');setStatus('appStatus',`App aktif ${app.appId}. delay=${delaySec}s max=${app.blastSettings?.maxPerBatch??50}`,'ok');}
-function renderAppsTop(){const sel=$('appSelectTop');sel.innerHTML='';state.apps.forEach(app=>{const op=document.createElement('option');op.value=app.appId;op.textContent=`${app.appId} - ${app.name||app.appId}`;sel.appendChild(op);});const lockedId=localStorage.getItem('wa_locked_app_id')||'';state.appLocked=Boolean(lockedId);const selected=(state.appLocked?state.apps.find(x=>x.appId===lockedId):null)||state.apps.find(x=>x.appId===state.selectedApp?.appId)||state.apps[0]||null;if(selected){sel.value=selected.appId;updateAppPanel(selected);}else{$('newAppId').value='';$('newAppName').value='';$('webhookUrl').value='';$('webhookSecret').value='';$('apiKeyBox').textContent='API key: -';setStatus('webhookTargetInfo','Webhook akan tersimpan ke app aktif.','');}updateAppLockUi();}
+function updateAppLockUi(){const sel=$('appSelectTop');const btn=$('lockAppBtn');if(state.appLocked){sel.disabled=true;btn.textContent='Buka Kunci';setStatus('appLockStatus',`Terkunci ke app: ${state.selectedApp?.appId||'-'} (hanya browser ini)`,'ok');}else{sel.disabled=false;btn.textContent='Kunci App';setStatus('appLockStatus','Mode app belum dikunci. Anda bisa pilih app lain kapan saja.','');}}
+function updateAppPanel(app){state.selectedApp=app;$('newAppId').value=String(app.appId||'');$('newAppName').value=String(app.name||app.appId||'');$('apiKeyInput').value=String(app.apiKey||'');$('apiKeyBox').textContent=`API key: ${app.apiKey||'-'}`;const delaySec=Number(app.blastSettings?.delaySeconds??20);$('delayMinutes').value=(delaySec/60).toFixed(2);$('maxPerBatch').value=String(app.blastSettings?.maxPerBatch??50);$('webhookUrl').value=String(app.webhookSettings?.url||'');$('webhookSecret').value=String(app.webhookSettings?.secret||'');$('webhookEnabled').value=(app.webhookSettings?.enabled===true)?'1':'0';setStatus('webhookTargetInfo',`Webhook tersimpan ke app aktif: ${app.appId}`,'ok');setStatus('appStatus',`App aktif ${app.appId}. delay=${delaySec}s max=${app.blastSettings?.maxPerBatch??50}`,'ok');}
+function renderAppsTop(){const sel=$('appSelectTop');sel.innerHTML='';state.apps.forEach(app=>{const op=document.createElement('option');op.value=app.appId;op.textContent=`${app.appId} - ${app.name||app.appId}`;sel.appendChild(op);});const lockedId=localStorage.getItem('wa_locked_app_id')||'';state.appLocked=Boolean(lockedId);const selected=(state.appLocked?state.apps.find(x=>x.appId===lockedId):null)||state.apps.find(x=>x.appId===state.selectedApp?.appId)||state.apps[0]||null;if(selected){sel.value=selected.appId;updateAppPanel(selected);}else{$('newAppId').value='';$('newAppName').value='';$('apiKeyInput').value='';$('webhookUrl').value='';$('webhookSecret').value='';$('apiKeyBox').textContent='API key: -';setStatus('webhookTargetInfo','Webhook akan tersimpan ke app aktif.','');}updateAppLockUi();}
 function renderSessions(){const tbody=$('devicesTable');tbody.innerHTML='';const activeAppId=state.selectedApp?.appId||'';const sessions=(state.sessions||[]).filter(s=>!activeAppId||s.appId===activeAppId);sessions.forEach(s=>{const tr=document.createElement('tr');tr.innerHTML=`<td><strong>${s.sessionId}</strong><br>${s.label||'-'}<br><small>${s.appId}</small></td><td><span class="badge">${s.status||'-'}</span><br><small style="color:#a33">${s.lastError||''}</small></td><td><button class="btn gray" data-act="reconnect" data-id="${s.sessionId}">Reconnect</button> <button class="btn danger" data-act="disconnect" data-id="${s.sessionId}">Disconnect</button> <button class="btn gray" data-act="token" data-id="${s.sessionId}">Token</button> <button class="btn" data-act="edit" data-id="${s.sessionId}">Edit</button> <button class="btn danger" data-act="delete" data-id="${s.sessionId}">Delete</button></td>`;tbody.appendChild(tr);});$('statDevices').textContent=String(sessions.length);$('statConnected').textContent=String(sessions.filter(x=>x.status==='connected').length);const groupSel=$('groupSessionSelect');groupSel.innerHTML='';sessions.forEach(s=>{const op=document.createElement('option');op.value=s.sessionId;op.textContent=`${s.sessionId} (${s.status})`;groupSel.appendChild(op);});if(!sessions.length){setStatus('groupStatus','Belum ada device untuk app aktif ini.','warn');state.groups=[];renderGroups();}}
 function renderPhonebook(){const q=($('pbSearch').value||'').toLowerCase().trim();const tbody=$('phonebookTable');tbody.innerHTML='';const filtered=state.contacts.filter(c=>!q||`${c.name||''} ${c.phone||''} ${c.note||''}`.toLowerCase().includes(q));filtered.forEach(c=>{const checked=state.selectedContactIds.has(String(c.id))?'checked':'';const tr=document.createElement('tr');tr.innerHTML=`<td><input type="checkbox" data-pb-check="1" data-id="${c.id}" ${checked}></td><td>${c.name||'-'}</td><td>${c.phone||'-'}</td><td>${c.note||'-'}</td><td><button class="btn danger" data-id="${c.id}" data-phonebook-del="1">Delete</button></td>`;tbody.appendChild(tr);});const sendSel=$('sendContactSelect');sendSel.innerHTML='<option value="">-- pilih kontak --</option>';state.contacts.forEach(c=>{const op=document.createElement('option');op.value=c.phone||'';op.textContent=`${c.name||c.phone} - ${c.phone||'-'}`;sendSel.appendChild(op);});}
 function renderGroups(){const tbody=$('groupTable');tbody.innerHTML='';state.groups.forEach(g=>{const m=Array.isArray(g.participants)?g.participants.length:Number(g.size||0);const groupName=g.subject||g.name||'-';const tr=document.createElement('tr');tr.innerHTML=`<td>${g.id||'-'}</td><td>${groupName}</td><td>${m||0}</td>`;tbody.appendChild(tr);});}
@@ -208,10 +215,7 @@ async function loadGroups(){const sid=$('groupSessionSelect').value;if(!sid)retu
 async function refreshAll(){await loadApps();await loadSessions();await loadPhonebook();await loadHistory();}
 function getApiKey(){return state.selectedApp?.apiKey||'';}
 function toggleAppLock(){if(!state.selectedApp)return;state.appLocked=!state.appLocked;if(state.appLocked){localStorage.setItem('wa_locked_app_id',state.selectedApp.appId);}else{localStorage.removeItem('wa_locked_app_id');}updateAppLockUi();}
-async function createApp(){const appId=$('newAppId').value.trim();const name=$('newAppName').value.trim();if(!appId)return setStatus('appStatus','App ID wajib.','warn');await api('/apps',{method:'POST',body:JSON.stringify({appId,name})});await loadApps();const app=state.apps.find(x=>x.appId===appId);if(app){$('appSelectTop').value=appId;updateAppPanel(app);}setStatus('appStatus',`App ${appId} tersimpan.`, 'ok');}
-async function saveBlastSetting(){if(!state.selectedApp)return setStatus('appStatus','Pilih app dulu.','warn');const delaySeconds=Math.max(0,Math.round(Number($('delayMinutes').value||0)*60));const maxPerBatch=Math.max(1,Number($('maxPerBatch').value||1));await api(`/apps/${state.selectedApp.appId}/blast-settings`,{method:'PUT',body:JSON.stringify({delaySeconds,maxPerBatch})});await loadApps();setStatus('appStatus','Setting blast disimpan.','ok');}
-async function saveWebhookSetting(){if(!state.selectedApp)return setStatus('appStatus','Pilih app dulu.','warn');const payload={enabled:$('webhookEnabled').value==='1',url:$('webhookUrl').value.trim(),secret:$('webhookSecret').value.trim()};if(payload.enabled&&!payload.url)return setStatus('appStatus','Webhook URL wajib saat aktif.','warn');const appId=String(state.selectedApp.appId||'').trim();await api(`/apps/${appId}/webhook-settings`,{method:'PUT',body:JSON.stringify(payload)});await loadApps();const app=state.apps.find(x=>x.appId===appId);if(app){$('appSelectTop').value=appId;updateAppPanel(app);}setStatus('appStatus',`Setting webhook disimpan ke app aktif: ${appId}.`,'ok');}
-async function regenerateApiKey(){if(!state.selectedApp)return setStatus('appStatus','Pilih app dulu.','warn');if(!confirm(`Regenerate API key untuk app ${state.selectedApp.appId}?`))return;const payload={apiKey:randomToken('ak')};await api(`/apps/${state.selectedApp.appId}/api-key`,{method:'PUT',body:JSON.stringify(payload)});await loadApps();setStatus('appStatus','API key baru sudah dibuat. Update juga di AMAL/client.','ok');}
+async function saveAppSetup(){const appId=$('newAppId').value.trim();const name=$('newAppName').value.trim();const apiKey=$('apiKeyInput').value.trim();if(!appId)return setStatus('appStatus','App ID wajib.','warn');if(!apiKey)return setStatus('appStatus','API key wajib. Klik Generate API Key.','warn');const delaySeconds=Math.max(0,Math.round(Number($('delayMinutes').value||0)*60));const maxPerBatch=Math.max(1,Number($('maxPerBatch').value||1));const webhookPayload={enabled:$('webhookEnabled').value==='1',url:$('webhookUrl').value.trim(),secret:$('webhookSecret').value.trim()};if(webhookPayload.enabled&&!webhookPayload.url)return setStatus('appStatus','Webhook URL wajib saat aktif.','warn');await api('/apps',{method:'POST',body:JSON.stringify({appId,name,apiKey})});await api(`/apps/${appId}/blast-settings`,{method:'PUT',body:JSON.stringify({delaySeconds,maxPerBatch})});await api(`/apps/${appId}/webhook-settings`,{method:'PUT',body:JSON.stringify(webhookPayload)});await loadApps();const app=state.apps.find(x=>x.appId===appId);if(app){$('appSelectTop').value=appId;updateAppPanel(app);}setStatus('appStatus',`App setup disimpan untuk ${appId}.`,'ok');}
 async function deleteActiveApp(){if(!state.selectedApp)return setStatus('appStatus','Pilih app dulu.','warn');const appId=String(state.selectedApp.appId||'');if(!confirm(`Hapus app aktif ${appId}? Semua session, history, dan phonebook app ini ikut terhapus.`))return;await api(`/apps/${encodeURIComponent(appId)}`,{method:'DELETE'});if(localStorage.getItem('wa_locked_app_id')===appId){localStorage.removeItem('wa_locked_app_id');state.appLocked=false;}state.selectedApp=null;await refreshAll();setStatus('appStatus',`App ${appId} berhasil dihapus.`,'ok');}
 async function addDevice(){if(!state.selectedApp)return setStatus('sessionStatus','Pilih app dulu.','warn');const payload={sessionId:$('sessionId').value.trim(),label:$('sessionLabel').value.trim(),appApiKey:getApiKey(),connectMode:$('connectMode').value,phoneNumber:$('pairPhone').value.trim()};if(!payload.sessionId)return setStatus('sessionStatus','Session ID wajib.','warn');const d=await api('/sessions',{method:'POST',body:JSON.stringify(payload)});$('blastSessionId').value=payload.sessionId;$('historySessionId').value=payload.sessionId;setStatus('sessionStatus',`Device ${payload.sessionId} dibuat. status=${d.session?.status||'connecting'}`,'ok');await showQr(payload.sessionId);await loadSessions();}
 async function showQr(id){const d=await api(`/sessions/${id}/qr?appApiKey=${encodeURIComponent(getApiKey())}`);if(d.qr)$('qrBox').innerHTML=`<img src="${d.qr}" alt="qr"/>`;else if(d.pairingCode)$('qrBox').innerHTML=`<div class="mono">Pairing Code:<br><strong style="font-size:22px">${d.pairingCode}</strong></div>`;else $('qrBox').textContent=`QR/Code belum tersedia. status=${d.status}`;}
@@ -219,8 +223,102 @@ async function onDeviceAction(e){const btn=e.target.closest('button[data-act]');
 async function addPhonebook(){if(!state.selectedApp)return;const payload={appId:state.selectedApp.appId,name:$('pbName').value.trim(),phone:$('pbPhone').value.trim(),note:$('pbNote').value.trim()};if(!payload.phone)return setStatus('pbStatus','Nomor wajib.','warn');await api('/phonebook',{method:'POST',body:JSON.stringify(payload)});$('pbName').value='';$('pbPhone').value='';$('pbNote').value='';await loadPhonebook();}
 function appendTargets(phones){const current=$('blastTargets').value.split(/\r?\n/).map(x=>x.trim()).filter(Boolean);$('blastTargets').value=[...new Set([...current,...phones])].join('\n');}
 async function sendBulk(){if(!state.selectedApp)return;const targets=$('blastTargets').value.split(/\r?\n/).map(x=>x.trim()).filter(Boolean);const payload={appApiKey:getApiKey(),sessionId:$('blastSessionId').value.trim(),message:$('blastMessage').value.trim(),imageUrl:$('blastImageUrl').value.trim()||null,targets};if(!payload.sessionId||!payload.targets.length)return setStatus('blastStatus','Session dan target wajib.','warn');if(!payload.message&&!payload.imageUrl)return setStatus('blastStatus','Isi pesan atau image URL wajib diisi.','warn');const d=await api('/send-bulk',{method:'POST',body:JSON.stringify(payload)});$('blastResult').textContent=JSON.stringify(d,null,2);await loadHistory();setStatus('blastStatus',`Blast diproses. sukses=${d.summary?.success??0}, gagal=${d.summary?.failed??0}`,'ok');}
-function bind(){bindMenu();$('refreshAllBtn').addEventListener('click',refreshAll);$('lockAppBtn').addEventListener('click',toggleAppLock);$('appSelectTop').addEventListener('change',()=>{if(state.appLocked){const lockedId=localStorage.getItem('wa_locked_app_id')||'';$('appSelectTop').value=lockedId;return setStatus('appLockStatus',`App terkunci: ${lockedId}`,'warn');}const app=state.apps.find(x=>x.appId===$('appSelectTop').value);if(app){updateAppPanel(app);state.groups=[];renderGroups();setStatus('groupStatus','Pilih device lalu update.','');loadSessions();loadPhonebook();loadHistory();}});$('createAppBtn').addEventListener('click',createApp);$('saveBlastSettingBtn').addEventListener('click',saveBlastSetting);$('saveWebhookSettingBtn').addEventListener('click',saveWebhookSetting);$('genWebhookSecretBtn').addEventListener('click',()=>{$('webhookSecret').value=randomToken('whsec');setStatus('appStatus','Webhook secret berhasil digenerate. Klik Simpan Webhook.','ok');});$('copyApiKeyBtn').addEventListener('click',()=>copyText(state.selectedApp?.apiKey||''));$('regenApiKeyBtn').addEventListener('click',regenerateApiKey);$('deleteActiveAppBtn').addEventListener('click',deleteActiveApp);$('createSessionBtn').addEventListener('click',addDevice);$('devicesTable').addEventListener('click',onDeviceAction);$('addPhonebookBtn').addEventListener('click',addPhonebook);$('pbSearch').addEventListener('input',renderPhonebook);$('phonebookTable').addEventListener('click',async e=>{const b=e.target.closest('button[data-phonebook-del]');if(!b)return;await api(`/phonebook/${b.dataset.id}`,{method:'DELETE'});state.selectedContactIds.delete(String(b.dataset.id));await loadPhonebook();});$('phonebookTable').addEventListener('change',e=>{const cb=e.target.closest('input[data-pb-check]');if(!cb)return;cb.checked?state.selectedContactIds.add(String(cb.dataset.id)):state.selectedContactIds.delete(String(cb.dataset.id));});$('pbCheckAll').addEventListener('change',e=>{document.querySelectorAll('input[data-pb-check]').forEach(cb=>{cb.checked=e.target.checked;const id=String(cb.dataset.id);e.target.checked?state.selectedContactIds.add(id):state.selectedContactIds.delete(id);});});$('fillSelectedToSendBtn').addEventListener('click',()=>{const map=new Map(state.contacts.map(x=>[String(x.id),x.phone]));appendTargets(Array.from(state.selectedContactIds).map(id=>map.get(id)).filter(Boolean));});$('loadGroupsBtn').addEventListener('click',async()=>{try{await loadGroups();}catch(err){setStatus('groupStatus',err.message||'Gagal load group.','warn');}});$('addSendContactBtn').addEventListener('click',()=>{const phone=$('sendContactSelect').value.trim();if(phone)appendTargets([phone]);});$('sendBlastBtn').addEventListener('click',sendBulk);$('loadHistoryBtn').addEventListener('click',loadHistory);$('historySearch').addEventListener('input',renderHistory);$('deleteSelectedHistoryBtn').addEventListener('click',async()=>{const ids=Array.from(document.querySelectorAll('input[data-history-id]:checked')).map(x=>x.dataset.historyId);if(!ids.length)return;await api('/messages/delete-bulk',{method:'POST',body:JSON.stringify({ids})});await loadHistory();});$('deleteAllHistoryBtn').addEventListener('click',async()=>{if(!confirm('Hapus semua history?'))return;await api('/messages',{method:'DELETE'});await loadHistory();});$('downloadHistoryBtn').addEventListener('click',()=>{const sid=$('historySessionId').value.trim();window.open(`/panel/api/messages/export.csv?appId=${encodeURIComponent(state.selectedApp?.appId||'')}&sessionId=${encodeURIComponent(sid)}`,'_blank');});$('historyTable').addEventListener('click',async e=>{const b=e.target.closest('button[data-history-del]');if(!b)return;await api(`/messages/${b.dataset.historyDel}`,{method:'DELETE'});await loadHistory();});$('chkAllHistory').addEventListener('change',e=>document.querySelectorAll('input[data-history-id]').forEach(x=>x.checked=e.target.checked));}
-bind();refreshAll().catch(e=>alert(e.message));
+function bind(){
+  bindMenu();
+  $('refreshAllBtn').addEventListener('click', refreshAll);
+  $('lockAppBtn').addEventListener('click', toggleAppLock);
+  $('appSelectTop').addEventListener('change', () => {
+    if (state.appLocked) {
+      const lockedId = localStorage.getItem('wa_locked_app_id') || '';
+      $('appSelectTop').value = lockedId;
+      return setStatus('appLockStatus', `App terkunci: ${lockedId}`, 'warn');
+    }
+    const app = state.apps.find(x => x.appId === $('appSelectTop').value);
+    if (app) {
+      updateAppPanel(app);
+      state.groups = [];
+      renderGroups();
+      setStatus('groupStatus', 'Pilih device lalu update.', '');
+      loadSessions();
+      loadPhonebook();
+      loadHistory();
+    }
+  });
+
+  $('saveAppSetupBtn').addEventListener('click', saveAppSetup);
+  $('genWebhookSecretBtn').addEventListener('click', () => {
+    $('webhookSecret').value = randomToken('whsec');
+    setStatus('appStatus', 'Webhook secret berhasil digenerate. Klik Simpan App Setup.', 'ok');
+  });
+  $('genApiKeyBtn').addEventListener('click', () => {
+    $('apiKeyInput').value = randomToken('ak');
+    setStatus('appStatus', 'API key berhasil digenerate. Klik Simpan App Setup.', 'ok');
+  });
+  $('copyApiKeyBtn').addEventListener('click', () => copyText($('apiKeyInput').value.trim()));
+  $('deleteActiveAppBtn').addEventListener('click', deleteActiveApp);
+
+  $('createSessionBtn').addEventListener('click', addDevice);
+  $('devicesTable').addEventListener('click', onDeviceAction);
+  $('addPhonebookBtn').addEventListener('click', addPhonebook);
+  $('pbSearch').addEventListener('input', renderPhonebook);
+  $('phonebookTable').addEventListener('click', async e => {
+    const b = e.target.closest('button[data-phonebook-del]');
+    if (!b) return;
+    await api(`/phonebook/${b.dataset.id}`, { method: 'DELETE' });
+    state.selectedContactIds.delete(String(b.dataset.id));
+    await loadPhonebook();
+  });
+  $('phonebookTable').addEventListener('change', e => {
+    const cb = e.target.closest('input[data-pb-check]');
+    if (!cb) return;
+    cb.checked ? state.selectedContactIds.add(String(cb.dataset.id)) : state.selectedContactIds.delete(String(cb.dataset.id));
+  });
+  $('pbCheckAll').addEventListener('change', e => {
+    document.querySelectorAll('input[data-pb-check]').forEach(cb => {
+      cb.checked = e.target.checked;
+      const id = String(cb.dataset.id);
+      e.target.checked ? state.selectedContactIds.add(id) : state.selectedContactIds.delete(id);
+    });
+  });
+  $('fillSelectedToSendBtn').addEventListener('click', () => {
+    const map = new Map(state.contacts.map(x => [String(x.id), x.phone]));
+    appendTargets(Array.from(state.selectedContactIds).map(id => map.get(id)).filter(Boolean));
+  });
+  $('loadGroupsBtn').addEventListener('click', async () => {
+    try { await loadGroups(); } catch (err) { setStatus('groupStatus', err.message || 'Gagal load group.', 'warn'); }
+  });
+  $('addSendContactBtn').addEventListener('click', () => {
+    const phone = $('sendContactSelect').value.trim();
+    if (phone) appendTargets([phone]);
+  });
+  $('sendBlastBtn').addEventListener('click', sendBulk);
+  $('loadHistoryBtn').addEventListener('click', loadHistory);
+  $('historySearch').addEventListener('input', renderHistory);
+  $('deleteSelectedHistoryBtn').addEventListener('click', async () => {
+    const ids = Array.from(document.querySelectorAll('input[data-history-id]:checked')).map(x => x.dataset.historyId);
+    if (!ids.length) return;
+    await api('/messages/delete-bulk', { method: 'POST', body: JSON.stringify({ ids }) });
+    await loadHistory();
+  });
+  $('deleteAllHistoryBtn').addEventListener('click', async () => {
+    if (!confirm('Hapus semua history?')) return;
+    await api('/messages', { method: 'DELETE' });
+    await loadHistory();
+  });
+  $('downloadHistoryBtn').addEventListener('click', () => {
+    const sid = $('historySessionId').value.trim();
+    window.open(`/panel/api/messages/export.csv?appId=${encodeURIComponent(state.selectedApp?.appId||'')}&sessionId=${encodeURIComponent(sid)}`, '_blank');
+  });
+  $('historyTable').addEventListener('click', async e => {
+    const b = e.target.closest('button[data-history-del]');
+    if (!b) return;
+    await api(`/messages/${b.dataset.historyDel}`, { method: 'DELETE' });
+    await loadHistory();
+  });
+  $('chkAllHistory').addEventListener('change', e => document.querySelectorAll('input[data-history-id]').forEach(x => x.checked = e.target.checked));
+}
+bind();
+refreshAll().catch(e => alert(e.message));
 </script>
 </body>
 </html>
