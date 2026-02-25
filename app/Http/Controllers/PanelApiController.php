@@ -50,6 +50,15 @@ class PanelApiController extends Controller
         return $this->jsonFromResponse($this->api->adminRequest('PUT', "/admin/apps/{$appId}/webhook-settings", $payload));
     }
 
+    public function regenerateApiKey(Request $request, string $appId): JsonResponse
+    {
+        $payload = $request->validate([
+            'apiKey' => ['nullable', 'string', 'max:255'],
+        ]);
+
+        return $this->jsonFromResponse($this->api->adminRequest('PUT', "/admin/apps/{$appId}/api-key", $payload));
+    }
+
     public function sessions(): JsonResponse
     {
         return $this->jsonFromResponse($this->api->adminRequest('GET', '/admin/sessions'));

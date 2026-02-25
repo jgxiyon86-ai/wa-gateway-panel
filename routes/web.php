@@ -21,6 +21,7 @@ Route::middleware('panel.auth')->group(function (): void {
         Route::post('/apps', [PanelApiController::class, 'storeApp']);
         Route::put('/apps/{appId}/blast-settings', [PanelApiController::class, 'updateBlastSetting']);
         Route::put('/apps/{appId}/webhook-settings', [PanelApiController::class, 'updateWebhookSetting']);
+        Route::put('/apps/{appId}/api-key', [PanelApiController::class, 'regenerateApiKey']);
 
         Route::get('/sessions', [PanelApiController::class, 'sessions']);
         Route::post('/sessions', [PanelApiController::class, 'createSession']);
